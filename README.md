@@ -6,8 +6,8 @@
 
 
 - Here is a more formal bio.
-  Associate Professor. Laboratorio Nacional de Microscopía Avanzada. Instituto de Biotecnología. Universidad Nacional Autónoma de México.
-  Vice President of the Academy of Sciences of the State of Morelos, Mexico.  
+-- Associate Professor. Laboratorio Nacional de Microscopía Avanzada. Instituto de Biotecnología. Universidad Nacional Autónoma de México.
+-- Vice President of the Academy of Sciences of the State of Morelos, Mexico.  
   Member of QUAREP-LiMi Steering Committee.
   Member of Microscopy DB: Steering Committee.
   Co-chair of LABI WG: Data Science for Bioimaging.
