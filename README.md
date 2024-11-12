@@ -1,7 +1,3 @@
-- 👋 Hi, I’m Adan Guerrero.
-- 👀 I’m interested in computational nanoscopy.
-- 🌱 I’m currently learning how to create FAIR science.
-- 💞️ I’m looking to collaborate on any aspect of image data science.
 - 📫 Reach me at adan.guerrero@ibt.unam.mx
 - Member of QUAREP-LiMi Steering Committee.
 - Member of Microscopy DB: Steering Committee.
