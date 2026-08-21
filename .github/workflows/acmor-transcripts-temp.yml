@@ -1,0 +1,61 @@
+name: Temporary ACMor transcript collection
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install yt-dlp pandas
+      - name: Collect ACMor channel catalog and available subtitles
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p output/subtitles output/logs
+          CHANNEL='https://www.youtube.com/@ACMorelos/videos'
+          yt-dlp --flat-playlist --dump-single-json "$CHANNEL" > output/channel.json 2>output/logs/catalog.stderr || true
+          python - <<'PY'
+          import json,csv,os
+          rows=[]
+          p='output/channel.json'
+          if os.path.exists(p) and os.path.getsize(p):
+              data=json.load(open(p,encoding='utf-8'))
+              for e in data.get('entries') or []:
+                  if not e: continue
+                  vid=e.get('id','')
+                  rows.append({'id':vid,'title':e.get('title',''),'url':e.get('url','') or (f'https://www.youtube.com/watch?v={vid}' if vid else ''),'duration':e.get('duration',''),'timestamp':e.get('timestamp',''),'channel':e.get('channel','')})
+          with open('output/catalog.csv','w',newline='',encoding='utf-8') as f:
+              w=csv.DictWriter(f,fieldnames=['id','title','url','duration','timestamp','channel']); w.writeheader(); w.writerows(rows)
+          print('CATALOG_COUNT',len(rows))
+          PY
+          yt-dlp --ignore-errors --skip-download --write-subs --write-auto-subs --sub-langs 'es.*,en.*' --sub-format vtt --write-info-json --paths 'output/subtitles' -o '%(id)s.%(ext)s' "$CHANNEL" > output/logs/subtitles.stdout 2> output/logs/subtitles.stderr || true
+          python - <<'PY'
+          import csv,glob,os
+          with open('output/catalog.csv',encoding='utf-8') as f: rows=list(csv.DictReader(f))
+          files=glob.glob('output/subtitles/*'); byid={r['id']:[] for r in rows}
+          for p in files:
+              base=os.path.basename(p); vid=base.split('.')[0]
+              if vid in byid: byid[vid].append(base)
+          for r in rows:
+              fs=byid.get(r['id'],[]); r['subtitle_files']=';'.join(sorted(fs)); r['has_vtt']='yes' if any(x.endswith('.vtt') for x in fs) else 'no'
+          fields=list(rows[0].keys()) if rows else ['id','title','url','duration','timestamp','channel','subtitle_files','has_vtt']
+          with open('output/catalog_with_subtitles.csv','w',newline='',encoding='utf-8') as f:
+              w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(rows)
+          print('WITH_VTT',sum(r.get('has_vtt')=='yes' for r in rows),'OF',len(rows))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acmor-youtube-transcripts
+          path: output
+          if-no-files-found: warn
